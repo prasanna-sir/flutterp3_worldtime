@@ -30,7 +30,7 @@ class WorldTime {
       List<String> timeParts = time.split(':');
       int hour = int.parse(timeParts[0]);
 
-      isDayTime = hour >= 6 && hour < 20? true: false;
+      isDayTime = hour >= 6 && hour < 18 ? true: false;
 
     }
     catch (e) {

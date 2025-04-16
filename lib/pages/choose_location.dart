@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import '../services/world_time.dart';
 class ChooseLocation extends StatefulWidget {
@@ -20,8 +21,22 @@ class _ChooseLocationState extends State<ChooseLocation> {
     WorldTime(url: 'America/Sao_Paulo', location: 'São Paulo', flag: 'brazil.png'),
   ];
   void updateTime (index) async{
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: SpinKitCubeGrid(
+          color: Colors.blue,
+          size: 50.0,
+        ),
+      ),
+    );
     WorldTime instance =locations[index];
     await instance.getTime();
+
+    // Remove loading spinner
+    Navigator.pop(context);
+
     //navigate to home screen
     Navigator.pop(context , {
       'location': instance.location,
@@ -52,6 +67,7 @@ class _ChooseLocationState extends State<ChooseLocation> {
             child: Card(
               child: ListTile(
                 onTap: (){
+
                   updateTime(index);
                 },
                 title:Text(locations[index].location) ,

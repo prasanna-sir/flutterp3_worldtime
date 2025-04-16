@@ -42,7 +42,8 @@ class _HomeState extends State<Home> {
                         'presenttime':result['presenttime'],
                         'location' :result['location'],
                         'presentday' :result['presentday'],
-                        'flag':result['flag']
+                        'flag':result['flag'],
+                        'isDayTime':result['isDayTime']
 
                       };
                     });
