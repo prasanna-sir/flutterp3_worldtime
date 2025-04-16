@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
-import 'dart:convert';
+import 'package:world_time/services/world_time.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+
 class Loading extends StatefulWidget {
   const Loading({super.key});
 
@@ -9,35 +10,40 @@ class Loading extends StatefulWidget {
 }
 
 class _LoadingState extends State<Loading> {
-  void getTime() async {
-    //making the request
-    Response response= await get (Uri.parse('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Kathmandu'));
-    Map data= jsonDecode(response.body);
-    // print(data);
-    // getting properties from data
-    String date = data['date'];
-    String time = data['time'];
-    String day = data['dayOfWeek'];
+  void setupWorldTime() async {
 
-    print (date);
-    print (time);
-    print(day);
+      WorldTime obj = WorldTime(location: 'Kathmandu', flag: 'flag.png', url: 'Asia/Kathmandu');
+      await obj.getTime();
 
+      // Navigate only if mounted (widget still exists)
+      if (!mounted) return;
 
-
-
-  }
+      Navigator.pushReplacementNamed(context, '/home', arguments: {
+        'location': obj.location,
+        'presenttime': obj.presenttime,
+        'flag': obj.flag,
+        'presentday': obj.presentday,
+        'isDayTime':obj.isDayTime,
+      });
+   }
   @override
   void initState() {
-
-    // TODO: implement initState
     super.initState();
-    getTime();
+    // Delay setup to allow build context to be fully ready
+    Future.delayed(Duration.zero, () {
+      setupWorldTime();
+    });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Text('Loading Screen'),
+      body: Center(
+        child: SpinKitChasingDots(
+          color:Colors.green,
+          size: 36,
+        ),
+      ),
     );
   }
 }
