@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:world_time/services/world_time.dart';
 import 'package:world_time/pages/loading.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -18,8 +19,8 @@ class _HomeState extends State<Home> {
     print(data);
 
     //set background
-    String bgImage = data['isDayTime']==true ? 'dayimg.jpg': 'nightimg.jpg';
-    Color bgColor = data['isDayTime'] ==true ? Colors.cyan.shade200 : Colors.black54;
+    String bgImage = data['isDayTime']==true ? 'dayyy.jpg': 'nightt.jpg';
+    Color bgColor = data['isDayTime'] ==true ? Colors.black : Colors.black54;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -52,7 +53,7 @@ class _HomeState extends State<Home> {
                   label: Text(
                     'change location',
                     style: TextStyle(fontSize: 25,
-                    color: Colors.white54
+                    color: Colors.white
                     ),
                   ),
                 ),
@@ -65,7 +66,7 @@ class _HomeState extends State<Home> {
                       style: TextStyle(
                         fontSize: 25,
                         letterSpacing: 2,
-                          color: Colors.white70
+                          color: Colors.white
                       ),
                     )
                   ],
@@ -75,14 +76,14 @@ class _HomeState extends State<Home> {
                   fontSize: 70,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 3,
-                    color: Colors.white70
+                    color: Colors.white
 
                 ),),
                 SizedBox(height: 10,),
                 Text(data['presentday'],style: TextStyle(
                   fontSize: 40,
                   letterSpacing: 2,
-                    color: Colors.white54
+                    color: Colors.white
                 ),)
 
               ],
