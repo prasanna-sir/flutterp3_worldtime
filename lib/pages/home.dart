@@ -84,7 +84,15 @@ class _HomeState extends State<Home> {
                   fontSize: 40,
                   letterSpacing: 2,
                     color: Colors.white
-                ),)
+                ),),
+                TextButton.icon(onPressed: (){
+                  Navigator.pushNamed(context, '/map');
+                },icon: Icon(Icons.map, color: Colors.white,),
+                  label: Text('View map',
+                    style: TextStyle(
+                        fontSize: 20,
+                      color: Colors.black),),
+                )
 
               ],
             ),
