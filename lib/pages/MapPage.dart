@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as location;
 import 'package:geocoding/geocoding.dart' as geocoding;
+import 'SearchPage.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -12,124 +13,140 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   late GoogleMapController mapController;
-  LatLng _center = const LatLng(27.7172, 85.3240); // Kathmandu
+  LatLng _center = const LatLng(27.7172, 85.3240); // Default to Kathmandu
   bool _isLoading = true;
-  LatLng? _destination;
   Set<Marker> _markers = {};
   final location.Location _locationService = location.Location();
   String? _errorMessage;
-  String? _currentAddress; // To store the address
+  String? _currentAddress; // Store the fetched address
 
   @override
   void initState() {
     super.initState();
-    _initializeLocationService();
+    _initializeLocation();
   }
 
-  Future<void> _initializeLocationService() async {
+  Future<void> _initializeLocation() async {
     try {
-      await _getLocation();
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to get location: ${e.toString()}';
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _getLocation() async {
-    bool serviceEnabled = await _locationService.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await _locationService.requestService();
+      bool serviceEnabled = await _locationService.serviceEnabled();
       if (!serviceEnabled) {
-        throw Exception('Location services are disabled');
+        serviceEnabled = await _locationService.requestService();
+        if (!serviceEnabled) throw Exception('Location services are disabled');
       }
-    }
 
-    location.PermissionStatus permission = await _locationService.hasPermission();
-    if (permission == location.PermissionStatus.denied) {
-      permission = await _locationService.requestPermission();
-      if (permission != location.PermissionStatus.granted) {
-        throw Exception('Location permissions denied');
+      var permission = await _locationService.hasPermission();
+      if (permission == location.PermissionStatus.denied) {
+        permission = await _locationService.requestPermission();
+        if (permission != location.PermissionStatus.granted) {
+          throw Exception('Location permissions denied');
+        }
       }
-    }
 
-    final currentLocation = await _locationService.getLocation();
-    setState(() {
-      _center = LatLng(currentLocation.latitude!, currentLocation.longitude!);
-      _getAddressFromCoordinates(_center.latitude, _center.longitude); // Get address from coordinates
+      final current = await _locationService.getLocation();
+      _center = LatLng(current.latitude!, current.longitude!);
       _markers.add(
         Marker(
-          markerId: const MarkerId("currentLocation"),
+          markerId: const MarkerId("current"),
           position: _center,
-          infoWindow: InfoWindow(title: "Your Location", snippet: _currentAddress), // Show address
+          infoWindow: InfoWindow(title:"Tapped Location", snippet:_currentAddress),
         ),
       );
-      _isLoading = false;
-    });
-  }
 
-  // Function to convert coordinates to address
-  Future<void> _getAddressFromCoordinates(double latitude, double longitude) async {
-    try {
-      List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(latitude, longitude);
-      geocoding.Placemark place = placemarks[0]; // Get the first place
-      setState(() {
-        _currentAddress = '${place.name}, ${place.locality}, ${place.country}'; // Format address
-      });
+      setState(() => _isLoading = false);
     } catch (e) {
       setState(() {
-        _currentAddress = 'Failed to get address';
+        _errorMessage = 'Error: ${e.toString()}';
+        _isLoading = false;
       });
     }
   }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    mapController.animateCamera(CameraUpdate.newLatLngZoom(_center, 15));
   }
 
-  void _onMapTapped(LatLng position) {
-    print("tapped location : ${position.latitude}, ${position.longitude}");
-    final message = 'Lat: ${position.latitude}, Lng: ${position.longitude}';
-
-    // Show coordinates in a snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_currentAddress!)),
+  void _goToSearch() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SearchPage(
+          onLocationSelected: (LatLng selected) {
+            mapController.animateCamera(CameraUpdate.newLatLngZoom(selected, 15));
+            _getAddressFromCoordinates(selected.latitude, selected.longitude);
+            setState(() {
+              _markers.removeWhere((m) => m.markerId.value == "searched");
+              _markers.add(
+                Marker(
+                  markerId: const MarkerId("searched"),
+                  position: selected,
+                  infoWindow: InfoWindow(title: "Searched Location", snippet: _currentAddress),
+                ),
+              );
+            });
+          },
+        ),
+      ),
     );
+  }
 
-    // Show marker at tapped location
+  // Get the address for the tapped or searched location
+  Future<void> _getAddressFromCoordinates(double latitude, double longitude) async {
+    try {
+      List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(latitude, longitude);
+      geocoding.Placemark place = placemarks[0];
+      setState(() {
+        _currentAddress = '${place.name}, ${place.locality}, ${place.country}';
+      });
+
+      // Show the address in a Snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Address: $_currentAddress')),
+      );
+    } catch (e) {
+      setState(() {
+        _currentAddress = 'Failed to get address';
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to get address')),
+      );
+    }
+  }
+
+  void _onMapTapped(LatLng tappedPoint) {
+    _getAddressFromCoordinates(tappedPoint.latitude, tappedPoint.longitude);
+
     setState(() {
-      _destination = position;
-      _markers.removeWhere((m) => m.markerId.value == 'destination');
+      _markers.removeWhere((m) => m.markerId.value == "tapped");
       _markers.add(
         Marker(
-          markerId: const MarkerId("destination"),
-          position: position,
-          infoWindow: InfoWindow(
-            title: "Tapped Location",
-            snippet: _currentAddress,  // Show coordinates for tapped location
-          ),
+          markerId: const MarkerId("tapped"),
+          position: tappedPoint,
+          infoWindow: InfoWindow(title: "Tapped Location", snippet: _currentAddress),
         ),
       );
     });
-    _getAddressFromCoordinates(position.latitude, position.longitude);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Your Location")),
+      appBar: AppBar(
+        title: const Text("Map"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _goToSearch,
+          ),
+        ],
+      ),
       body: _errorMessage != null
           ? Center(child: Text(_errorMessage!))
           : _isLoading
           ? const Center(child: CircularProgressIndicator())
           : GoogleMap(
         onMapCreated: _onMapCreated,
-        initialCameraPosition: CameraPosition(
-          target: _center,
-          zoom: 15.0,
-        ),
+        initialCameraPosition: CameraPosition(target: _center, zoom: 15),
         myLocationEnabled: true,
         myLocationButtonEnabled: true,
         markers: _markers,

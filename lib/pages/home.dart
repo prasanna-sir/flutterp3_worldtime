@@ -51,7 +51,7 @@ class _HomeState extends State<Home> {
                   },
                   icon: Icon(Icons.edit_location),
                   label: Text(
-                    'change location',
+                    'Time for the other locations',
                     style: TextStyle(fontSize: 25,
                     color: Colors.white
                     ),
